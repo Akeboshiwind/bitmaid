@@ -1,4 +1,4 @@
-(ns bitmaid.domain
+(ns bitmaid.domain.parser
   (:require [cljs.spec.alpha :as s]
             [cljs.spec.gen.alpha :as gen]
             [cljs.reader :refer [read-string]]
@@ -144,8 +144,10 @@
 
 (s/def ::axiom
   (s/cat :axiom #{':-}
-         :pairs (s/* (s/cat :name ::general-symbol
-                            :logical-precondition ::logical-precondition))))
+         :head ::logical-atom
+         :axioms (s/* (s/alt :named (s/cat :name ::general-symbol
+                                           :logical-precondition ::logical-precondition)
+                             :unnamed (s/cat :logical-precondition ::logical-precondition)))))
 
 (s/def ::normal-task-atom
   (s/cat :name ::task-symbol
@@ -192,34 +194,22 @@
   (s/and vector?
          (s/coll-of ::delete-add-element)))
 
-#_
 (s/def ::operator
-  (s/and
-   (s/cat :operator #{':operator}
-          :head (s/or :normal-task ::normal-task-atom)
-          :precondition ::logical-precondition
-          :delete-list (s/and vector? (s/coll-of ::delete-add-element))
-          :add-list (s/and vector? (s/coll-of ::delete-add-element))
-          :cost (s/* number?))
+  (s/&
+   (s/alt :set-cost (s/cat :operator #{':operator}
+                           :head (s/or :normal-task ::normal-task-atom)
+                           :precondition ::logical-precondition
+                           :delete-list (s/and vector? (s/coll-of ::delete-add-element))
+                           :add-list (s/and vector? (s/coll-of ::delete-add-element))
+                           :cost number?)
+          :no-cost  (s/cat :operator #{':operator}
+                           :head (s/or :normal-task ::normal-task-atom)
+                           :precondition ::logical-precondition
+                           :delete-list (s/and vector? (s/coll-of ::delete-add-element))
+                           :add-list (s/and vector? (s/coll-of ::delete-add-element))))
    (fn vars-check [op]
-     (let [head-vars (find-variables (:head op))
-           precond-vars (find-variables (:precondition op))
-           delete-list-vars (find-variables (:delete-list op))
-           add-list-vars (find-variables (:add-list op))
-           legal-vars (union head-vars precond-vars)
-           check-vars (union delete-list-vars add-list-vars)]
-       (subset? check-vars legal-vars)))))
-
-(s/def ::operator
-  (s/and
-   (s/cat :operator #{':operator}
-          :head (s/or :normal-task ::normal-task-atom)
-          :precondition ::logical-precondition
-          :delete-list (s/and vector? (s/coll-of ::delete-add-element))
-          :add-list (s/and vector? (s/coll-of ::delete-add-element))
-          :cost (s/* number?))
-   (fn vars-check [op]
-     (let [head-vars (find-variables (:head op))
+     (let [op (second op)
+           head-vars (find-variables (:head op))
            precond-vars (find-variables (:precondition op))
            delete-list-vars (find-variables (:delete-list op))
            add-list-vars (find-variables (:add-list op))
@@ -241,8 +231,41 @@
                     :operator ::operator
                     :axiom ::axiom)))
 
-(expound :bitmaid.domain/domain-extension '[(:method (have-breakfast)
-                                                     ()
-                                                     [(choose-drink)
-                                                      (make-meal)
-                                                      (!eat)])])
+(def ground? (comp empty? find-variables))
+
+(s/def ::problem
+  (s/&
+   (s/cat :defproblem #{'defproblem}
+          :name ::general-symbol
+          :initial-state (s/and vector?
+                                (s/* ::logical-atom))
+          :task-list ::task-list)
+   (comp ground? :initial-state)))
+
+(defn parse-spec
+  "Takes a spec and a form to be parsed or a string containing a form to be parsed,
+  attempts to parse it.
+  If the form is invalid of produces and error while parsing, returns nil."
+  [spec form]
+  (try
+    (let [form (if (string? form) (read-string form) form)
+          parsed (s/conform spec form)]
+      (if (not (= :cljs.spec.alpha/invalid parsed))
+        parsed
+        (do
+          (println "Failed to parse input form.")
+          (expound spec form))))
+    (catch :default e (println "Parsing form caused an exception."))))
+
+
+(defn parse-domain-extension
+  "Takes a `domain-extension` form, or a string containing the form, and attempts to parse it.
+  If the form is invalid or produces an error while parsing returns nil."
+  [form]
+  (parse-spec ::domain-extension form))
+
+(defn parse-problem
+  "Takes a `problem` form, or a string containing the form, and attempts to parse it.
+  If the form is invalid or produces an error while parsing returns nil."
+  [form]
+  (parse-spec ::problem form))
