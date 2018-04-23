@@ -130,12 +130,15 @@
 (deftest test-logical-structures
   (testing "::logical-atom"
     (is (s/valid? ::p/logical-atom '(hello)))
+    (is (= :logical-atom (first (s/conform ::p/logical-atom '(hello)))))
     (is (s/valid? ::p/logical-atom '(hello ?test)))
     (is (s/valid? ::p/logical-atom '(hello test)))
     (is (s/valid? ::p/logical-atom '(hello 1)))
     (is (s/valid? ::p/logical-atom '(hello (call + 1 2))))
     (is (s/valid? ::p/logical-atom '(hello [1 2 3])))
     (is (s/valid? ::p/logical-atom '(hello 1 2 3)))
+    (is (s/valid? ::p/logical-atom '?test))
+    (is (= :late-binding (first (s/conform ::p/logical-atom '?test))))
     (is (not (s/valid? ::p/logical-atom '[hello 1 2 3])))
     (is (not (s/valid? ::p/logical-atom '(?hello 1 2 3))))
     (is (not (s/valid? ::p/logical-atom '(!hello 1 2 3))))
@@ -151,36 +154,40 @@
     (is (s/valid? ::p/conjunction '(and (and (hello ?test)) (and (hello)))))
     (is (s/valid? ::p/conjunction '(and)))
     (is (s/valid? ::p/conjunction '()))
+    (is (s/valid? ::p/conjunction '(and (hello) ?test)))
     (is (not (s/valid? ::p/conjunction '((hello)))))
     (is (not (s/valid? ::p/conjunction '(and hello ?test)))))
   (testing "::disjunction"
     (is (s/valid? ::p/disjunction '(or (hello))))
     (is (s/valid? ::p/disjunction '(or (or (hello ?test)) (or (hello)))))
     (is (s/valid? ::p/disjunction '(or)))
+    (is (s/valid? ::p/disjunction '(or ?hello)))
     (is (not (s/valid? ::p/disjunction '(or hello ?test)))))
   (testing "::negation"
     (is (s/valid? ::p/negation '(not (hello))))
     (is (s/valid? ::p/negation '(not (hello ?test))))
+    (is (s/valid? ::p/negation '(not ?test)))
     (is (not (s/valid? ::p/negation '(not))))
     (is (not (s/valid? ::p/disjunction '(not (hello ?test) (test)))))
     (is (not (s/valid? ::p/disjunction '(not hello ?test)))))
   (testing "::implication"
     (is (s/valid? ::p/implication '(imply (sunny ?place) (nice-out ?place))))
+    (is (s/valid? ::p/implication '(imply ?test (nice-out ?place))))
+    (is (s/valid? ::p/implication '(imply (sunny ?place) ?test)))
+    (is (s/valid? ::p/implication '(imply ?test ?another)))
     (is (not (s/valid? ::p/implication '(imply (sunny ?place) (nice-out ?place) (test ?hello)))))
     (is (not (s/valid? ::p/implication '(imply sunny ?place))))
     (is (not (s/valid? ::p/implication '(imply (sunny ?place)))))
     (is (not (s/valid? ::p/implication '(imply)))))
   (testing "::universal-quantification"
-    (is (s/valid? ::p/universal-quantification
-                  '(forall [?p] (package ?p) (in ?p ?t))))
-    (is (not (s/valid? ::p/universal-quantification
-                       '(forall [?p] (package ?p)))))
-    (is (not (s/valid? ::p/universal-quantification
-                       '(forall [?p]))))
-    (is (not (s/valid? ::p/universal-quantification
-                       '(forall))))
-    (is (not (s/valid? ::p/universal-quantification
-                       '(forall [?p] (package ?x) (in ?x ?t))))))
+    (is (s/valid? ::p/universal-quantification '(forall [?p] (package ?p) (in ?p ?t))))
+    (is (s/valid? ::p/universal-quantification '(forall [?p] ?p ?test)))
+    (is (s/valid? ::p/universal-quantification '(forall [?p] (package ?p) ?test)))
+    (is (s/valid? ::p/universal-quantification '(forall [?p] ?test (in ?p ?t))))
+    (is (not (s/valid? ::p/universal-quantification '(forall [?p] (package ?p)))))
+    (is (not (s/valid? ::p/universal-quantification '(forall [?p]))))
+    (is (not (s/valid? ::p/universal-quantification '(forall))))
+    (is (not (s/valid? ::p/universal-quantification '(forall [?p] (package ?x) (in ?x ?t))))))
   (testing "::assignment"
     (is (s/valid? ::p/assignment '(def ?test 1)))
     (is (s/valid? ::p/assignment '(def ?test [1])))
@@ -192,6 +199,9 @@
     (is (s/valid? ::p/expression '(test ?hello)))
     (is (= :logical-atom
            (first (s/conform ::p/expression '(test ?hello)))))
+    (is (s/valid? ::p/expression '?hello))
+    (is (= :logical-atom
+           (first (s/conform ::p/expression '?hello))))
     (is (s/valid? ::p/expression '(and (hello))))
     (is (= :conjunction
            (first (s/conform ::p/expression '(and (hello))))))
@@ -220,6 +230,7 @@
 (deftest test-preconditions
   (testing "::first-satisfier-precondition"
     (is (s/valid? ::p/first-satisfier-precondition '(:first (test ?hello))))
+    (is (s/valid? ::p/first-satisfier-precondition '(:first ?hello)))
     (is (not (s/valid? ::p/first-satisfier-precondition '(:first))))
     (is (not (s/valid? ::p/first-satisfier-precondition '(:first (test ?hello)
                                                                  (another ?h)))))
@@ -227,6 +238,7 @@
   (testing "::sorted-precondition"
     (is (s/valid? ::p/sorted-precondition '(:sort-by ?d > (and (at ?here)
                                                                (distance ?her ?there ?d)))))
+    (is (s/valid? ::p/sorted-precondition '(:sort-by ?d > ?test)))
     (is (not (s/valid? ::p/sorted-precondition '(:sort-by ?d >))))
     (is (not (s/valid? ::p/sorted-precondition '(:sort-by ?d))))
     (is (not (s/valid? ::p/sorted-precondition '(:sort-by))))
@@ -240,6 +252,9 @@
     (is (s/valid? ::p/logical-precondition '(test ?hello)))
     (is (= :expression
            (first (s/conform ::p/logical-precondition '(test ?hello)))))
+    (is (s/valid? ::p/logical-precondition '?hello))
+    (is (= :expression
+           (first (s/conform ::p/logical-precondition '?hello))))
     (is (s/valid? ::p/logical-precondition '(:first (test ?hello))))
     (is (= :first-satisfier-precondition
            (first (s/conform ::p/logical-precondition '(:first (test ?hello))))))
@@ -259,6 +274,17 @@
                                  bad
                                  (and (distance home ?x ?d)
                                       (call <= ?d 1)))))
+    (= 2
+       (count
+        (:axioms
+         (s/conform ::p/axiom '(:- (walking-distance ?x)
+                                   good
+                                   (and (weather-is good)
+                                        (distance home ?x ?d)
+                                        (call <= ?d 2))
+                                   bad
+                                   (and (distance home ?x ?d)
+                                        (call <= ?d 1)))))))
     (is (s/valid? ::p/axiom '(:- (walking-distance ?x)
                                  (and (weather-is good)
                                       (distance home ?x ?d)
@@ -272,12 +298,41 @@
                                       (call <= ?d 2))
                                  (and (distance home ?x ?d)
                                       (call <= ?d 1)))))
+    (is (= 2
+           (count
+            (:axioms
+             (s/conform ::p/axiom '(:- (walking-distance ?x)
+                                       good
+                                       (and (weather-is good)
+                                            (distance home ?x ?d)
+                                            (call <= ?d 2))
+                                       (and (distance home ?x ?d)
+                                            (call <= ?d 1))))))))
     (is (s/valid? ::p/axiom '(:- (walking-distance ?x)
                                  good
                                  (and (weather-is good)
                                       (distance home ?x ?d)
                                       (call <= ?d 2)))))
+    (is (= 1
+           (count
+            (:axioms
+             (s/conform ::p/axiom '(:- (walking-distance ?x)
+                                       good
+                                       (and (weather-is good)
+                                            (distance home ?x ?d)
+                                            (call <= ?d 2))))))))
     (is (s/valid? ::p/axiom '(:- (walking-distance ?x))))
+    (is (s/valid? ::p/axiom '(:- (walking-distance ?x)
+                                 ?good ;; This is ok because it maybe it is supposed to be replaced
+                                       ;; Maybe add to a 'Gotchas' section?
+                                 (and (weather-is good)
+                                      (distance home ?x ?d)
+                                      (call <= ?d 2)))))
+    (is (s/valid? ::p/axiom '(:- ?test
+                                 good
+                                 (and (weather-is good)
+                                      (distance home ?x ?d)
+                                      (call <= ?d 2)))))
     (is (not (s/valid? ::p/axiom '(:- good
                                       (and (weather-is good)
                                            (distance home ?x ?d)
@@ -292,11 +347,6 @@
                                            (call <= ?d 1))))))
     (is (not (s/valid? ::p/axiom '(:- good))))
     (is (not (s/valid? ::p/axiom '(:- (walking-distance ?x) good))))
-    (is (not (s/valid? ::p/axiom '(:- (walking-distance ?x)
-                                      ?good
-                                      (and (weather-is good)
-                                           (distance home ?x ?d)
-                                           (call <= ?d 2))))))
     (is (not (s/valid? ::p/axiom '(:- (walking-distance ?x)
                                       !good
                                       (and (weather-is good)
@@ -328,6 +378,7 @@
     (is (s/valid? ::p/task-list '[(hello 1)]))
     (is (s/valid? ::p/task-list '[(!hello 1) (!hi 2)]))
     (is (s/valid? ::p/task-list '[(hello 1) (!hi 2)]))
+    (is (s/valid? ::p/task-list '[[(hello 1)] (!hi 2)]))
     (is (s/valid? ::p/task-list '[(:immediate !hello 1)]))
     (is (s/valid? ::p/task-list '[(:immediate hello 1)]))
     (is (s/valid? ::p/task-list '[:unordered (!hello 1)]))
@@ -347,14 +398,40 @@
   (testing "::protection-condition"
     (is (s/valid? ::p/protection-condition '(:protection (at ?truck ?location))))
     (is (s/valid? ::p/protection-condition '(:protection (hello (call + 1 2)))))
+    (is (s/valid? ::p/protection-condition '(:protection ?hello)))
     (is (not (s/valid? ::p/protection-condition '(:this (at ?truck ?location))))))
   (testing "::delete-add-element"
     (is (s/valid? ::p/delete-add-element '(at ?truck ?location)))
+    (is (= :logical-atom
+           (first (s/conform ::p/delete-add-element '(at ?truck ?location)))))
+    (is (s/valid? ::p/delete-add-element '?hello))
+    (is (= :logical-atom
+           (first (s/conform ::p/delete-add-element '?hello))))
     (is (s/valid? ::p/delete-add-element '(:protection (at ?truck ?location))))
+    (is (= :protection-condition
+           (first (s/conform ::p/delete-add-element '(:protection (at ?truck ?location))))))
     (is (s/valid? ::p/delete-add-element '(:protection (hello (call + 1 2)))))
     (is (s/valid? ::p/delete-add-element '(forall [?package] (blue ?package) (not (red ?package)))))
+    (is (= :universal-quantification
+           (first (s/conform ::p/delete-add-element '(forall [?package] (blue ?package) (not (red ?package)))))))
     (is (not (s/valid? ::p/delete-add-element '(:this (at ?truck ?location)))))
     (is (not (s/valid? ::p/delete-add-element '(imply (at ?truck ?location))))))
+  (testing "::delete-add-list"
+    (is (s/valid? ::p/delete-add-list '[(at ?truck ?location)
+                                        (:protection (at ?truck ?location))
+                                        (forall [?package] (blue ?package) (not (red ?package)))]))
+    (is (s/valid? ::p/delete-add-list '[?test]))
+    (is (s/valid? ::p/delete-add-list '?test))
+    (is (= :late-binding
+           (first (s/conform ::p/delete-add-list '?test))))
+    (is (= :logical-atom
+           (first (first (second (s/conform ::p/delete-add-list '[(at ?truck ?location)]))))))
+    (is (= :logical-atom
+           (first (first (second (s/conform ::p/delete-add-list '[?test]))))))
+    (is (= :protection-condition
+           (first (first (second (s/conform ::p/delete-add-list '[(:protection (at ?truck ?location))]))))))
+    (is (= :universal-quantification
+           (first (first (second (s/conform ::p/delete-add-list '[(forall [?package] (blue ?package) (not (red ?package)))])))))))
   (testing "::operator"
     (is (s/valid? ::p/operator '(:operator (!drive-to ?truck ?old-loc ?location)
                                            ()
@@ -377,6 +454,20 @@
                                            ()
                                            []
                                            [])))
+    (is (s/valid? ::p/operator '(:operator (!drive-to ?truck ?old-loc ?location)
+                                           ()
+                                           ?later
+                                           [(at ?truck ?location)
+                                            (:protection (at ?truck ?location))])))
+    (is (s/valid? ::p/operator '(:operator (!drive-to ?truck ?old-loc ?location)
+                                           ()
+                                           [(at ?truck ?old-loc)]
+                                           ?later)))
+    (is (s/valid? ::p/operator '(:operator (!drive-to ?truck ?old-loc ?location)
+                                           ?later
+                                           [(at ?truck ?old-loc)]
+                                           [(at ?truck ?location)
+                                            (:protection (at ?truck ?location))])))
     (is (= :normal-task
            (first
             (:head
@@ -621,6 +712,11 @@
     (is (not (s/valid? ::p/domain-extension '[(:test (something))])))))
 
 (deftest test-problem
+  (testing "::state-list"
+    (is (s/valid? ::p/state-list '[(hello 1) (test) (hi 1 constant 3)]))
+    (is (s/valid? ::p/state-list '[]))
+    (is (s/valid? ::p/state-list '[(hello (call + 1 2))]))
+    (is (not (s/valid? ::p/state-list '[(!hello)]))))
   (testing "::problem"
     (is (s/valid? ::p/problem '(defproblem test
                                  [(hello 1)]

@@ -52,10 +52,14 @@
                 :function-symbol ::function-symbol
                 :terms (s/* ::term))))
 
-(s/def ::logical-atom
+(s/def ::logical-atom*
   (s/and list?
-         (s/cat :predicate-symbol ::predicate-symbol
-                :terms (s/* ::term))))
+       (s/cat :predicate-symbol ::predicate-symbol
+              :terms (s/* ::term))))
+
+(s/def ::logical-atom
+  (s/or :late-binding ::variable-symbol
+        :logical-atom ::logical-atom*))
 
 (s/def ::conjunction nil)
 (s/def ::disjunction nil)
@@ -119,8 +123,12 @@
           :predicate ::expression
           :form ::expression)
    (fn [form]
-     (let [vars (:variable-symbols form)]
-       (set= vars (find-variables (:predicate form)))))))
+     (let [predicate (:predicate form)]
+       (if (and (= :logical-atom (first predicate))
+                (= :late-binding (first (second predicate))))
+         true
+         (let [vars (:variable-symbols form)]
+           (set= vars (find-variables predicate))))))))
 
 (s/def ::assignment
   (s/cat :def #{'def}
@@ -134,7 +142,7 @@
 (s/def ::sorted-precondition
   (s/cat :first #{:sort-by}
          :variable-symbol ::variable-symbol
-         :comparitor ::function-symbol
+         :comparator ::function-symbol
          :expression ::expression))
 
 (s/def ::logical-precondition
@@ -188,25 +196,29 @@
 (s/def ::delete-add-element
   (s/or :logical-atom ::logical-atom
         :protection-condition ::protection-condition
-        :forall ::universal-quantification))
+        :universal-quantification ::universal-quantification))
 
-(s/def ::delete-add-list
+(s/def ::delete-add-list*
   (s/and vector?
          (s/coll-of ::delete-add-element)))
+
+(s/def ::delete-add-list
+  (s/or :late-binding ::variable-symbol
+        :delete-add-list ::delete-add-list*))
 
 (s/def ::operator
   (s/&
    (s/alt :set-cost (s/cat :operator #{':operator}
                            :head (s/or :normal-task ::normal-task-atom)
                            :precondition ::logical-precondition
-                           :delete-list (s/and vector? (s/coll-of ::delete-add-element))
-                           :add-list (s/and vector? (s/coll-of ::delete-add-element))
+                           :delete-list ::delete-add-list
+                           :add-list ::delete-add-list
                            :cost number?)
           :no-cost  (s/cat :operator #{':operator}
                            :head (s/or :normal-task ::normal-task-atom)
                            :precondition ::logical-precondition
-                           :delete-list (s/and vector? (s/coll-of ::delete-add-element))
-                           :add-list (s/and vector? (s/coll-of ::delete-add-element))))
+                           :delete-list ::delete-add-list
+                           :add-list ::delete-add-list))
    (fn vars-check [op]
      (let [op (second op)
            head-vars (find-variables (:head op))
@@ -233,12 +245,15 @@
 
 (def ground? (comp empty? find-variables))
 
+(s/def ::state-list
+  (s/and vector?
+         (s/* ::logical-atom*)))
+
 (s/def ::problem
   (s/&
    (s/cat :defproblem #{'defproblem}
           :name ::general-symbol
-          :initial-state (s/and vector?
-                                (s/* ::logical-atom))
+          :initial-state ::state-list
           :task-list ::task-list)
    (comp ground? :initial-state)))
 
