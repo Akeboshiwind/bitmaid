@@ -306,3 +306,13 @@
     (map->Problem {:name name
                    :initial-state initial-state
                    :task-list task-list})))
+
+(defn precompile-domain-extension
+  [domain-extension]
+  (compile-domain-extension
+   (p/parse-domain-extension domain-extension)))
+
+(defn precompile-problem
+  [problem]
+  (compile-problem
+   (p/parse-problem problem)))

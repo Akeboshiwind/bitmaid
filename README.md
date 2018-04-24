@@ -1,30 +1,36 @@
-# Standalone Usage
+# bitmaid
 
-1. `lein figwheel`
-2. (In another window) `node target\js\compiled\bitmaid.js ...`
+FIXME: description
 
+## Installation
 
-# Production Builds
+Download from http://example.com/FIXME.
 
-1. `lein cljsbuild once prod`
-2. `node server.js ...`
+## Usage
 
+FIXME: explanation
 
-# REPL Usage (Vim)
+    $ java -jar bitmaid-0.1.0-standalone.jar [args]
 
-You can now connect to Figwheel's REPL through
-[Piggieback](https://github.com/cemerick/piggieback) using
-[vim-fireplace](https://github.com/tpope/vim-fireplace):
+## Options
 
-1. `lein repl`
-2. `(fig-start)`
-3. `(cljs-repl)`
-4. (In another window) `node target\js\compiled\bitmaid.js ...`
-5. (In Vim) `:Piggieback (figwheel-sidecar.repl-api/repl-env)`
+FIXME: listing of options this app accepts.
 
-Standard `vim-fireplace` commands will now work in the context of the
-Figwheel process:
+## Examples
 
-- `cqp` to send a command from Vim to the REPL
-- `cpa...` to evaluate a form without saving or reloading the file
-- etc.
+...
+
+### Bugs
+
+...
+
+### Any Other Sections
+### That You Think
+### Might be Useful
+
+## License
+
+Copyright © 2018 FIXME
+
+Distributed under the Eclipse Public License either version 1.0 or (at
+your option) any later version.

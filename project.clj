@@ -1,42 +1,10 @@
 (defproject bitmaid "0.1.0-SNAPSHOT"
-  :description "FIXME: write this!"
+  :description "FIXME: write description"
   :url "http://example.com/FIXME"
-
-  :min-lein-version "2.7.1"
-
-  :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.9.908"]
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :dependencies [[org.clojure/clojure "1.9.0"]
                  [expound "0.5.0"]]
-
-  :plugins [[lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
-            [lein-figwheel "0.5.13"]]
-
-  :source-paths ["src"]
-
-  :clean-targets ["server.js"
-                  "target"]
-
-  :cljsbuild {
-              :builds [{:id "dev"
-                        :source-paths ["src"]
-                        :figwheel true
-                        :compiler {
-                                   :main bitmaid.core
-                                   :asset-path "target/js/compiled/dev"
-                                   :output-to "target/js/compiled/bitmaid.js"
-                                   :output-dir "target/js/compiled/dev"
-                                   :target :nodejs
-                                   :optimizations :none
-                                   :source-map-timestamp true}}
-                       {:id "prod"
-                        :source-paths ["src"]
-                        :compiler {
-                                   :output-to "server.js"
-                                   :output-dir "target/js/compiled/prod"
-                                   :target :nodejs
-                                   :optimizations :simple}}]}
-
-  :profiles {:dev {:dependencies [[figwheel-sidecar "0.5.13"]
-                                  [com.cemerick/piggieback "0.2.2"]]
-                   :source-paths ["src" "dev"]
-                   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}})
+  :main ^:skip-aot bitmaid.core
+  :target-path "target/%s"
+  :profiles {:uberjar {:aot :all}})
