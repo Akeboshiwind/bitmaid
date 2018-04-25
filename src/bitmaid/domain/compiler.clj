@@ -1,19 +1,21 @@
 (ns bitmaid.domain.compiler
   (:require [bitmaid.domain.parser :as p]
-            [cljs.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]))
 
 ;; Utils
 (def gen-debug-name gensym)
 (defn list-args
   "Given a spec form, return a vector of the variables found."
   [spec-form]
-  (into []
-        (p/find-variables spec-form)))
+  (->> (p/walk-tree spec-form)
+       (filter #(and (seqable? %)
+                     (= :variable-symbol (first %))))
+       (map second)))
 
 ;; Compiler
 (defrecord Variable [name])
 (defrecord Constant [name])
-(defrecord Number [value])
+(defrecord TermNumber [value])
 
 (defrecord Call [function-symbol args])
 (def compile-term nil)
@@ -35,7 +37,7 @@
     (case type
       :variable-symbol (map->Variable {:name body})
       :constant-symbol (map->Constant {:name body})
-      :number (map->Number {:value body})
+      :number (map->TermNumber {:value body})
       :call (compile-call body)
       :list (compile-list body))))
 

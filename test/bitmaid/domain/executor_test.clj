@@ -2,8 +2,8 @@
   (:require [bitmaid.domain.executor :as e]
             [bitmaid.domain.parser :as p]
             [bitmaid.domain.compiler :as c]
-            [cljs.spec.alpha :as s]
-            [cljs.test :as t :include-macros true :refer [deftest testing is]]))
+            [clojure.spec.alpha :as s]
+            [clojure.test :as t :include-macros true :refer [deftest testing is]]))
 
 (deftest JSOP2-compiler
   (testing "Variable"
@@ -12,9 +12,9 @@
   (testing "Constant"
     (is (= 'test
            (e/compile (c/map->Constant {:name 'test})))))
-  (testing "Number"
+  (testing "TermNumber"
     (is (= 123
-           (e/compile (c/map->Number {:value 123})))))
+           (e/compile (c/map->TermNumber {:value 123})))))
   (testing "Call"
     (is (= '(call + ?one two [1 2 3] 4 (call > 1 2))
            (e/compile
@@ -107,7 +107,7 @@
            (e/compile
             (c/compile-task-list
              (s/conform ::p/task-list '[[(!test ?hey)] (!eat-with-fork ?food ?fork)])))))
-    (is (not (= cljs.core/PersistentVector
+    (is (not (= clojure.lang.PersistentVector
                 (type
                  (e/compile
                   (c/compile-task-list
@@ -116,7 +116,7 @@
            (e/compile
             (c/compile-task-list
              (s/conform ::p/task-list '[:unordered [(!test ?hey)] (!eat-with-fork ?food ?fork)])))))
-    (is (not (= cljs.core/PersistentVector
+    (is (not (= clojure.lang.PersistentVector
                 (type
                  (e/compile
                   (c/compile-task-list
@@ -187,7 +187,7 @@
                          ((at ?truck ?location)
                           (:protection (at ?truck ?location)))
                          1)
-            (e/compile compiled)))))
+             (e/compile compiled)))))
   (testing "AxiomPrecondition"
     (let [axiom (s/conform ::p/axiom '(:- (eat ?food)
                                           branch1
@@ -222,8 +222,8 @@
                                                (distance home ?x ?d)
                                                (call <= ?d 2))
                                           (:first
-                                            (and (distance home ?x ?d)
-                                                 (call <= ?d 1)))))
+                                           (and (distance home ?x ?d)
+                                                (call <= ?d 1)))))
           compiled (c/compile-axiom axiom)]
       (is (e/compile compiled))))
   (testing "DomainExtension"
@@ -271,6 +271,13 @@
                              (:protection (at ?truck ?location)))
                             1)))
              (e/compile compiled)))))
+  (testing "Problem"
+    (let [problem (p/parse-problem '(defproblem problem
+                                      [(have kiwi)]
+                                      [(swap banjo kiwi)]))
+          compiled (c/compile-problem problem)]
+      (is (= '(defproblem problem housedomain
+                ((have kiwi))
+                ((swap banjo kiwi)))
+             (e/compile compiled)))))
   [])
-
-(t/run-tests 'bitmaid.domain.executor-test)

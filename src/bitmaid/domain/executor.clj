@@ -1,7 +1,18 @@
 (ns bitmaid.domain.executor
   (:require [bitmaid.domain.compiler :as c]
             [bitmaid.domain.parser :as p]
-            [cljs.spec.alpha :as s]))
+            [clojure.spec.alpha :as s])
+  ;; Import records
+  (:import [bitmaid.domain.compiler Variable
+            Constant TermNumber Call TermList
+            Conjunction Disjunction Negation
+            Implication UniversalQuantification
+            Assignment LateBinding LogicalAtom
+            FirstSatisfierPrecondition SortedPrecondition
+            TaskAtom TaskList MethodOption
+            Method ProtectionCondition Operator
+            AxiomPrecondition Axiom DomainExtension
+            Problem]))
 
 (def flatten-1 (partial mapcat identity))
 
@@ -9,97 +20,97 @@
   (compile [this] "Compile the given form into a form that the JSHOP compiler will understand."))
 
 (extend-protocol JSHOPCompile
-  c/Variable
+  Variable
   (compile
     [{:keys [name]}]
     name)
-  c/Constant
+  Constant
   (compile
     [{:keys [name]}]
     name)
-  c/Number
+  TermNumber
   (compile
     [{:keys [value]}]
     value)
-  c/Call
+  Call
   (compile
     [{:keys [function-symbol args]}]
     `(~'call ~function-symbol ~@(map compile args)))
-  c/TermList
+  TermList
   (compile
     [{:keys [values]}]
     `(~@(map compile values)))
-  c/Conjunction
+  Conjunction
   (compile
     [{:keys [expressions]}]
     (if (empty? expressions)
       `()
       `(~'and ~@(map compile expressions))))
-  c/Disjunction
+  Disjunction
   (compile
     [{:keys [expressions]}]
     `(~'or ~@(map compile expressions)))
-  c/Negation
+  Negation
   (compile
     [{:keys [expression]}]
     `(~'not ~(compile expression)))
-  c/Implication
+  Implication
   (compile
     [{:keys [lhs rhs]}]
     `(~'imply ~(compile lhs) ~(compile rhs)))
-  c/UniversalQuantification
+  UniversalQuantification
   (compile
     [{:keys [variables predicate form]}]
     `(~'forall (~@variables)
                ~(compile predicate)
                ~(compile form)))
-  c/Assignment
+  Assignment
   (compile
     [{:keys [name value]}]
     `(~'assign ~name ~(compile value)))
-  c/LateBinding
+  LateBinding
   (compile
     [{:keys [name]}]
     name)
-  c/LogicalAtom
+  LogicalAtom
   (compile
     [{:keys [name args]}]
     `(~name ~@(map compile args)))
-  c/FirstSatisfierPrecondition
+  FirstSatisfierPrecondition
   (compile
     [{:keys [expression]}]
     `(~':first ~(compile expression)))
-  c/SortedPrecondition
+  SortedPrecondition
   (compile
     [{:keys [variable comparator expression]}]
     `(~':sort-by ~variable ~comparator ~(compile expression)))
-  c/TaskAtom
+  TaskAtom
   (compile
     [{:keys [name args immediate? primitive?]}]
     `(~@(when immediate? [':immediate])
       ~name
       ~@(map compile args)))
-  c/TaskList
+  TaskList
   (compile
     [{:keys [task-lists ordered?]}]
     `(~@(when (not ordered?) [':unordered])
       ~@(map compile task-lists)))
-  c/MethodOption
+  MethodOption
   (compile
     [{:keys [name precondition tail]}]
     `(~name
       ~(compile precondition)
       ~(compile tail)))
-  c/Method
+  Method
   (compile
     [{:keys [name args options]}]
     `(~':method (~name ~@args)
       ~@(flatten-1 (map compile options))))
-  c/ProtectionCondition
+  ProtectionCondition
   (compile
     [{:keys [atom]}]
     `(~':protection ~(compile atom)))
-  c/Operator
+  Operator
   (compile
     [{:keys [name args precondition delete-list add-list cost]}]
     `(~':operator (~name ~@args)
@@ -107,17 +118,17 @@
       (~@(map compile delete-list))
       (~@(map compile add-list))
       ~cost))
-  c/AxiomPrecondition
+  AxiomPrecondition
   (compile
     [{:keys [name precondition]}]
     `(~name
       ~(compile precondition)))
-  c/Axiom
+  Axiom
   (compile
     [{:keys [name args preconditions]}]
     `(~':- (~name ~@args)
       ~@(flatten-1 (map compile preconditions))))
-  c/DomainExtension
+  DomainExtension
   (compile
     [{:keys [axioms methods operators]}]
     `(~'defdomain ~'housedomain
@@ -125,9 +136,9 @@
               (map vals)
               (flatten-1)
               (map compile)))))
-  c/Problem
+  Problem
   (compile
     [{:keys [name initial-state task-list]}]
     `(~'defproblem ~name ~'housedomain
-       (~@(compile initial-state))
+       (~@(map compile initial-state))
        (~@(compile task-list)))))

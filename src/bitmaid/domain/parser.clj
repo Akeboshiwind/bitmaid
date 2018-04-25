@@ -1,7 +1,6 @@
 (ns bitmaid.domain.parser
-  (:require [cljs.spec.alpha :as s]
-            [cljs.spec.gen.alpha :as gen]
-            [cljs.reader :refer [read-string]]
+  (:require [clojure.spec.alpha :as s]
+            [clojure.spec.gen.alpha :as gen]
             [clojure.set :refer [union subset?]]
             [expound.alpha :refer [expound]]))
 
@@ -270,7 +269,7 @@
         (do
           (println "Failed to parse input form.")
           (expound spec form))))
-    (catch :default e (println "Parsing form caused an exception."))))
+    (catch Exception e (println "Parsing form caused an exception."))))
 
 
 (defn parse-domain-extension

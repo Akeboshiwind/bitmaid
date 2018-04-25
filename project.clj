@@ -7,4 +7,6 @@
                  [expound "0.5.0"]]
   :main ^:skip-aot bitmaid.core
   :target-path "target/%s"
+  :resource-paths ["resources/JSHOP2.jar"
+                   "resources/antlr.jar"]
   :profiles {:uberjar {:aot :all}})

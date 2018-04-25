@@ -1,7 +1,7 @@
 (ns bitmaid.domain.parser-test
   (:require [bitmaid.domain.parser :as p]
-            [cljs.test :as t :include-macros true :refer [deftest testing is]]
-            [cljs.spec.alpha :as s]
+            [clojure.test :as t :include-macros true :refer [deftest testing is]]
+            [clojure.spec.alpha :as s]
             [expound.alpha :refer [expound]]))
 
 (deftest test-symbols
@@ -775,5 +775,3 @@
                                                  [(hello 1)] [(!test)])"))))
     (is (nil? (p/parse-problem "(defproblem test [(hello 1] [(!test)])")))
     (is (nil? (p/parse-problem "(defproblem test [(hello 1)] [(!test))")))))
-
-(t/run-tests 'bitmaid.domain.parser-test)
