@@ -16,129 +16,129 @@
 
 (def flatten-1 (partial mapcat identity))
 
-(defprotocol JSHOPCompile
-  (compile [this] "Compile the given form into a form that the JSHOP compiler will understand."))
+(defprotocol JSHOPEncode
+  (encode [this] "Encode the given form into a form that the JSHOP compiler will understand."))
 
-(extend-protocol JSHOPCompile
+(extend-protocol JSHOPEncode
   Variable
-  (compile
+  (encode
     [{:keys [name]}]
     name)
   Constant
-  (compile
+  (encode
     [{:keys [name]}]
     name)
   TermNumber
-  (compile
+  (encode
     [{:keys [value]}]
     value)
   Call
-  (compile
+  (encode
     [{:keys [function-symbol args]}]
-    `(~'call ~function-symbol ~@(map compile args)))
+    `(~'call ~function-symbol ~@(map encode args)))
   TermList
-  (compile
+  (encode
     [{:keys [values]}]
-    `(~@(map compile values)))
+    `(~@(map encode values)))
   Conjunction
-  (compile
+  (encode
     [{:keys [expressions]}]
     (if (empty? expressions)
       `()
-      `(~'and ~@(map compile expressions))))
+      `(~'and ~@(map encode expressions))))
   Disjunction
-  (compile
+  (encode
     [{:keys [expressions]}]
-    `(~'or ~@(map compile expressions)))
+    `(~'or ~@(map encode expressions)))
   Negation
-  (compile
+  (encode
     [{:keys [expression]}]
-    `(~'not ~(compile expression)))
+    `(~'not ~(encode expression)))
   Implication
-  (compile
+  (encode
     [{:keys [lhs rhs]}]
-    `(~'imply ~(compile lhs) ~(compile rhs)))
+    `(~'imply ~(encode lhs) ~(encode rhs)))
   UniversalQuantification
-  (compile
+  (encode
     [{:keys [variables predicate form]}]
     `(~'forall (~@variables)
-               ~(compile predicate)
-               ~(compile form)))
+               ~(encode predicate)
+               ~(encode form)))
   Assignment
-  (compile
+  (encode
     [{:keys [name value]}]
-    `(~'assign ~name ~(compile value)))
+    `(~'assign ~name ~(encode value)))
   LateBinding
-  (compile
+  (encode
     [{:keys [name]}]
     name)
   LogicalAtom
-  (compile
+  (encode
     [{:keys [name args]}]
-    `(~name ~@(map compile args)))
+    `(~name ~@(map encode args)))
   FirstSatisfierPrecondition
-  (compile
+  (encode
     [{:keys [expression]}]
-    `(~':first ~(compile expression)))
+    `(~':first ~(encode expression)))
   SortedPrecondition
-  (compile
+  (encode
     [{:keys [variable comparator expression]}]
-    `(~':sort-by ~variable ~comparator ~(compile expression)))
+    `(~':sort-by ~variable ~comparator ~(encode expression)))
   TaskAtom
-  (compile
+  (encode
     [{:keys [name args immediate? primitive?]}]
     `(~@(when immediate? [':immediate])
       ~name
-      ~@(map compile args)))
+      ~@(map encode args)))
   TaskList
-  (compile
+  (encode
     [{:keys [task-lists ordered?]}]
     `(~@(when (not ordered?) [':unordered])
-      ~@(map compile task-lists)))
+      ~@(map encode task-lists)))
   MethodOption
-  (compile
+  (encode
     [{:keys [name precondition tail]}]
     `(~name
-      ~(compile precondition)
-      ~(compile tail)))
+      ~(encode precondition)
+      ~(encode tail)))
   Method
-  (compile
+  (encode
     [{:keys [name args options]}]
     `(~':method (~name ~@args)
-      ~@(flatten-1 (map compile options))))
+      ~@(flatten-1 (map encode options))))
   ProtectionCondition
-  (compile
+  (encode
     [{:keys [atom]}]
-    `(~':protection ~(compile atom)))
+    `(~':protection ~(encode atom)))
   Operator
-  (compile
+  (encode
     [{:keys [name args precondition delete-list add-list cost]}]
     `(~':operator (~name ~@args)
-      ~(compile precondition)
-      (~@(map compile delete-list))
-      (~@(map compile add-list))
+      ~(encode precondition)
+      (~@(map encode delete-list))
+      (~@(map encode add-list))
       ~cost))
   AxiomPrecondition
-  (compile
+  (encode
     [{:keys [name precondition]}]
     `(~name
-      ~(compile precondition)))
+      ~(encode precondition)))
   Axiom
-  (compile
+  (encode
     [{:keys [name args preconditions]}]
     `(~':- (~name ~@args)
-      ~@(flatten-1 (map compile preconditions))))
+      ~@(flatten-1 (map encode preconditions))))
   DomainExtension
-  (compile
+  (encode
     [{:keys [axioms methods operators]}]
     `(~'defdomain ~'housedomain
       (~@(->> (list axioms methods operators)
               (map vals)
               (flatten-1)
-              (map compile)))))
+              (map encode)))))
   Problem
-  (compile
+  (encode
     [{:keys [name initial-state task-list]}]
     `(~'defproblem ~name ~'housedomain
-       (~@(map compile initial-state))
-       (~@(compile task-list)))))
+       (~@(map encode initial-state))
+       (~@(encode task-list)))))

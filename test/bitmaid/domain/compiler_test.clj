@@ -98,7 +98,7 @@
           compiled (c/compile-assignment expr)]
       (is (= Assignment (type compiled)))
       (is (= '?hello (:name compiled)))
-      (is (= Number (type (:value compiled))))))
+      (is (= TermNumber (type (:value compiled))))))
   (testing "compile-call"
     (let [expr (s/conform ::p/call '(call >= ?hello 1))
           compiled (c/compile-call expr)]

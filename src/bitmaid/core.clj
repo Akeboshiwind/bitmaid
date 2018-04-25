@@ -1,70 +1,32 @@
 (ns bitmaid.core
+  (:gen-class)
   (:require [bitmaid.domain.compiler :as c]
             [bitmaid.domain.executor :as e]
-            [bitmaid.jshop-wrapper :refer [gen-domain gen-plan]]
+            [bitmaid.jshop-wrapper :refer :all]
             [clojure.java.shell :refer [sh]]
             [clojure.pprint :refer [pprint]]))
-
-;;; TODO ;;;
-;; Execute tasks in order
-;; Decompose tasks then execute
-;; Import task list from API
-;; Plugins to import tasks to be executed
-;; Plugins to import middleware tasks
-;; Support definition of main-tasks from user API
-;; Similar to middleware tasks
-
-(def current-domain (atom (c/precompile-domain-extension "[]")))
-
-(defn extend-domain
-  [base extension]
-  (-> base
-      (update :axioms (partial merge (:axioms extension)))
-      (update :methods (partial merge (:methods extension)))
-      (update :operators (partial merge (:operators extension)))))
-
-(def domain (c/precompile-domain-extension
-             "[(:method (swap ?x ?y)
-                  (and (have ?x) (not (have ?y)))
-                  [(!drop ?x) (!pickup ?y)]
-                  (and (have ?y) (not (have ?x)))
-                  [(!drop ?y) (!pickup ?x)])
-                 (:operator (!drop ?a) (and (have ?a)) [(have ?a)] [])
-                 (:operator (!pickup ?a) () [] [(have ?a)])]"))
-
-(def problem (c/precompile-problem
-              "(defproblem problem
-                   [(have kiwi)]
-                   [(swap banjo kiwi)])"))
-
-(defn find-plan
-  [lines start]
-  (let [length (count lines)]
-    (loop [pos start
-           acc []]
-      (let [current (nth lines pos)]
-        (if (or (not (= \( (first current)))
-                (>= pos length))
-          acc
-          (recur (+ pos 1)
-                 (conj acc current)))))))
-
-(defn parse-plan-text
-  [text]
-  (let [lines (clojure.string/split-lines text)]
-    (when (re-matches #".*plan\(s\) were found:" (second lines))
-      (let [cost-str (re-find #"\d+\.\d+" (nth lines 4))]
-        {:plan (find-plan lines 6)
-         :cost (read-string cost-str)}))))
 
 (defn re-files
   ([re]
    (re-files re "."))
   ([re dir]
-   (->> (clojure.java.io/file dir)
-        (.listFiles)
-        (filter #(.isFile %))
-        (filter #(re-matches re (.getName %))))))
+   (let [files (->> (clojure.java.io/file dir)
+                    (.listFiles)
+                    (filter #(.isFile %))
+                    (filter #(re-matches re (.getName %))))]
+     (if (empty? files)
+       nil
+       files))))
+(comment
+  (def domain (some->> (re-files #".*\.dext") ;; Read the domain files
+                       (map file->dom-ext)    ;; Convert the files to internal representation
+                       (reduce (fn            ;; Merge extensions into one domain
+                                 ([] nil)
+                                 ([& args] (apply extend-domain args))))))
+
+  (def problem (some->> (re-files #".*\.prob") ;; Read problem file
+                        (first)
+                        (file->problem))))       ;; Convert file to internal representation
 
 (defn delete-files
   [files]
@@ -74,10 +36,10 @@
 (defn generate-plan
   [domain problem]
   (println "Create domain file")
-  (spit "housedomain" (with-out-str (pprint (e/compile domain))))
+  (spit "housedomain" (with-out-str (pprint (e/encode domain))))
 
   (println "Create problem file")
-  (spit "problem" (with-out-str (pprint (e/compile problem))))
+  (spit "problem" (with-out-str (pprint (e/encode problem))))
 
   (println "Compile domain")
   (gen-domain "housedomain")
@@ -107,12 +69,43 @@
     (println "Delete problem file")
     (delete-files (re-files #"problem"))
 
-    (parse-plan-text (:out plan))))
+    (println "Finished")
+    (println (parse-plan-text (:out plan)))))
+
+(defn file->dom-ext
+  [file]
+  (-> file
+      (slurp)
+      (c/precompile-domain-extension)))
+
+(defn file->problem
+  [file]
+  (-> file
+      (slurp)
+      (c/precompile-problem)))
+
+(defn extend-domain
+  [base extension]
+  (-> base
+      (update :axioms (partial merge (:axioms extension)))
+      (update :methods (partial merge (:methods extension)))
+      (update :operators (partial merge (:operators extension)))))
 
 (defn -main
-  []
-  #_
-  (do
-    (read-domain-files)
-    (read-problem-file)
-    (generate-plan @domain problem)))
+  [& args]
+  (let [domain (some->> (re-files #".*\.dext") ;; Read the domain files
+                        (map file->dom-ext)    ;; Convert the files to internal representation
+                        (reduce (fn            ;; Merge extensions into one domain
+                                  ([] nil)
+                                  ([& args] (apply extend-domain args)))))
+
+        problem (some->> (re-files #".*\.prob") ;; Read problem file
+                         (first)
+                         (file->problem))]       ;; Convert file to internal representation
+    (if (not (nil? domain))
+      (if (not (nil? problem))
+        (if-let [plan (generate-plan domain problem)]
+          plan
+          (println "No plans were found"))
+        (println "No problem file found"))
+      (println "No domain file(s) found"))))

@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [expound "0.5.0"]]
-  :main ^:skip-aot bitmaid.core
+  :main bitmaid.core
   :target-path "target/%s"
   :resource-paths ["resources/JSHOP2.jar"
                    "resources/antlr.jar"]
