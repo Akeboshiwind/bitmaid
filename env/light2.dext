@@ -1,0 +1,11 @@
+[(:operator (!turn-on_light2 ?light)
+            (and (type ?light light2)
+                 (off ?light))
+            [(off ?light)]
+            [(on ?light)])
+
+ (:operator (!turn-off_light2 ?light)
+            (and (type ?light light2)
+                 (on ?light))
+            [(on ?light)]
+            [(off ?light)])]

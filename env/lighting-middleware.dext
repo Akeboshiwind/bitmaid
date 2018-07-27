@@ -1,0 +1,21 @@
+[(:method (turn-on-light ?light)
+          (and (light ?light)
+               (off ?light)
+               (type ?light light1))
+          [(!turn-on_light1 ?light)]
+          (and (light ?light)
+               (off ?light)
+               (type ?light light2))
+          [(!turn-on_light2 ?light)])
+
+ (:method (turn-off-light ?light)
+          (and (light ?light)
+               (on ?light)
+               (type ?light light1))
+          [(!turn-off_light1 ?light)]
+          (and (light ?light)
+               (on ?light)
+               (type ?light light2))
+          [(!turn-off_light2 ?light)]
+          ()
+          [])]

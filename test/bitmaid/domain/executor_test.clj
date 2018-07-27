@@ -272,7 +272,7 @@
                             1)))
              (e/encode compiled)))))
   (testing "Problem"
-    (let [problem (p/parse-problem '(defproblem problem
+    (let [problem (p/parse-problem '(defproblem
                                       [(have kiwi)]
                                       [(swap banjo kiwi)]))
           compiled (c/compile-problem problem)]

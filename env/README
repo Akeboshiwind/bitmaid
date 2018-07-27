@@ -1,0 +1,26 @@
+== Scripts in this directory =
+
+I have prepared several scripts to run the various functions that may be needed
+to work this project.
+
+These scripts expect that they will be run from the env/ directory and that the
+env/ directory will exist in the base of the project directory with `leiningen`,
+the java compiler and java runtime installed and setup.
+
+They also expect a resources/ folder in the base of the env/ directory
+containing the antlr.jar and JSHOP2.jar files.
+
+1. scripts/build.sh
+
+The build script will build the project and transfer the new version of the .jar
+file generated into the env/ folder ready for `run`ing.
+
+2. scripts/run.sh
+
+The run script will run the .jar file and output it's output to the console.
+
+3. scripts/clean.sh
+
+If the .jar file errors then intermediate files can sometimes be failed to be
+cleaned up, this script will delete these files as well as the domain extension
+and problem files.

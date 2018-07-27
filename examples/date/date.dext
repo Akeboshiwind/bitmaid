@@ -1,0 +1,75 @@
+;; Assumes that there will exist a `time` and `old-time` predicate in the
+;; current state that contains an int of the current unix time
+[(:method (add-date)
+          ()
+          [(!!add-year)
+           (!!add-month)
+           (!!add-day)
+           (!!add-dow)])
+ (:operator (!!add-year)
+            (and (time ?unix)
+                 (old-time ?old-unix))
+            [(year ?old-unix)]
+            [(year ?unix)]
+            0)
+ (:operator (!!add-month)
+            (and (time ?unix)
+                 (old-time ?old-unix))
+            [(month ?old-unix)]
+            [(month ?unix)]
+            0)
+ (:operator (!!add-day)
+            (and (time ?unix)
+                 (old-time ?old-unix))
+            [(day ?old-unix)]
+            [(day ?unix)]
+            0)
+ (:operator (!!add-dow)
+            (and (time ?unix)
+                 (old-time ?old-unix))
+            [(dow ?old-unix)]
+            [(dow ?unix)]
+            0)
+ (:method (add-time)
+          ()
+          [(!!add-hour)
+           (!!add-minute)
+           (!!add-second)])
+ (:operator (!!add-hour)
+            (and (time ?unix)
+                 (old-time ?old-unix))
+            [(hour ?old-unix)]
+            [(hour ?unix)]
+            0)
+ (:operator (!!add-minute)
+            (and (time ?unix)
+                 (old-time ?old-unix))
+            [(minute ?old-unix)]
+            [(minute ?unix)]
+            0)
+ (:operator (!!add-second)
+            (and (time ?unix)
+                 (old-time ?old-unix))
+            [(second ?old-unix)]
+            [(second ?unix)]
+            0)
+ (:- (morning ?hour)
+     (and (call >= ?hour 0)
+          (call < ?hour 12)))
+ (:- (afternoon ?hour)
+     (and (call >= ?hour 12)
+          (call < ?hour 18)))
+ (:- (evening ?hour)
+     (and (call >= ?hour 18)
+          (call <= ?hour 24)))]
+;;; Usage ;;;
+;; Todo: test this ;;
+#_
+[(:operator (!turn-on-light ?light)
+            (and (hour ?hour)
+                 (evening ?hour))
+            [(off ?light)]
+            [(on ?light)])
+ (:method (turn-on-light ?light)
+          ()
+          [(add-time)(!turn-on-light ?light)])]

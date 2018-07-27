@@ -10,8 +10,8 @@
             Assignment LateBinding LogicalAtom
             FirstSatisfierPrecondition SortedPrecondition
             TaskAtom TaskList MethodOption
-            Method ProtectionCondition Operator
-            AxiomPrecondition Axiom DomainExtension
+            Method ProtectionCondition ForallExpression
+            Operator AxiomPrecondition Axiom DomainExtension
             Problem]))
 
 (def flatten-1 (partial mapcat identity))
@@ -110,6 +110,12 @@
   (encode
     [{:keys [atom]}]
     `(~':protection ~(encode atom)))
+  ForallExpression
+  (encode
+    [{:keys [variables predicate logical-atoms]}]
+    `(~'forall (~@variables)
+      ~(encode predicate)
+      (~@(map encode logical-atoms))))
   Operator
   (encode
     [{:keys [name args precondition delete-list add-list cost]}]
@@ -138,7 +144,7 @@
               (map encode)))))
   Problem
   (encode
-    [{:keys [name initial-state task-list]}]
-    `(~'defproblem ~name ~'housedomain
+    [{:keys [initial-state task-list]}]
+    `(~'defproblem ~'problem ~'housedomain
        (~@(map encode initial-state))
        (~@(encode task-list)))))

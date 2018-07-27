@@ -17,16 +17,6 @@
      (if (empty? files)
        nil
        files))))
-(comment
-  (def domain (some->> (re-files #".*\.dext") ;; Read the domain files
-                       (map file->dom-ext)    ;; Convert the files to internal representation
-                       (reduce (fn            ;; Merge extensions into one domain
-                                 ([] nil)
-                                 ([& args] (apply extend-domain args))))))
-
-  (def problem (some->> (re-files #".*\.prob") ;; Read problem file
-                        (first)
-                        (file->problem))))       ;; Convert file to internal representation
 
 (defn delete-files
   [files]
@@ -69,8 +59,11 @@
     (println "Delete problem file")
     (delete-files (re-files #"problem"))
 
+    (println "Shutting down agents")
+    (shutdown-agents)
+
     (println "Finished")
-    (println (parse-plan-text (:out plan)))))
+    (parse-plan-text (:out plan))))
 
 (defn file->dom-ext
   [file]
@@ -91,21 +84,54 @@
       (update :methods (partial merge (:methods extension)))
       (update :operators (partial merge (:operators extension)))))
 
+(comment
+  (def domain
+    (->> (re-files #".*\.dext")
+         (map file->dom-ext)
+         (reduce (fn
+                   ([] nil)
+                   ([& args] (apply extend-domain args))))))
+
+  (def problem
+    (->> (re-files #".*\.prob")
+         (first)
+         (file->problem))))
+
 (defn -main
   [& args]
-  (let [domain (some->> (re-files #".*\.dext") ;; Read the domain files
-                        (map file->dom-ext)    ;; Convert the files to internal representation
-                        (reduce (fn            ;; Merge extensions into one domain
-                                  ([] nil)
-                                  ([& args] (apply extend-domain args)))))
+  (println "Searching for domain extension files")
+  (if-let [domain-files (re-files #".*\.dext")]
+    (do
+      (println "Found domain extensions:")
+      (doseq [f domain-files]
+        (println (.getName f)))
 
-        problem (some->> (re-files #".*\.prob") ;; Read problem file
-                         (first)
-                         (file->problem))]       ;; Convert file to internal representation
-    (if (not (nil? domain))
-      (if (not (nil? problem))
-        (if-let [plan (generate-plan domain problem)]
-          plan
-          (println "No plans were found"))
-        (println "No problem file found"))
-      (println "No domain file(s) found"))))
+      (if-let [problem-files (re-files #".*\.prob")]
+        (let [problem-file (first problem-files)]
+          (println "Found a problem file:")
+          (println (.getName problem-file))
+
+          (println "Compiling domain extensions")
+          (if-let [domain (some->> domain-files
+                                   (map file->dom-ext)     ;; Convert the files to internal representation
+                                   (reduce (fn             ;; Merge extensions into one domain
+                                             ([] nil)
+                                             ([& args] (apply extend-domain args)))))]
+            (do
+              (println "Compiling problem")
+              (if-let [problem (file->problem problem-file)];; Convert file to internal representation
+                (do
+                  (println "Generating plan")
+                  (if-let [plan (generate-plan domain problem)]
+                    (do
+                      (println)
+                      (println "Plan found!")
+                      (println (str "Plan: " (:plan plan)))
+                      (println (str "Cost: " (:cost plan))))
+                    (do
+                      (println)
+                      (println "No plans were found"))))
+                (println "Failed to compile problem")))
+            (println "Failed to compile domain extensions")))
+        (println "No problem file found")))
+    (println "No domain extensions found")))

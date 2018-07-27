@@ -1,0 +1,14 @@
+[(:- (morning)
+     (and (hour ?hour)
+          (call > ?hour 0)
+          (call < ?hour 6)))
+
+ (:- (afternoon)
+     (and (hour ?hour)
+          (call >= ?hour 6)
+          (call < ?hour 20)))
+
+ (:- (evening)
+     (and (hour ?hour)
+          (call >= ?hour 20)
+          (call < ?hour 24)))]

@@ -1,0 +1,21 @@
+[(:operator (!turn-on ?light)
+            (and (light ?light)
+                 (off ?light))
+            [(off ?light)]
+            [(on ?light)])
+
+ (:operator (!turn-off ?light)
+            (and (light ?light)
+                 (on ?light))
+            [(on ?light)]
+            [(off ?light)])
+
+ (:method (toggle-light-internal ?light)
+          (on ?light)
+          [(!turn-off ?light)]
+          (off ?light)
+          [(!turn-on ?light)])
+
+ (:method (toggle-light ?light)
+          (light ?light)
+          [(toggle-light-internal ?light)])]

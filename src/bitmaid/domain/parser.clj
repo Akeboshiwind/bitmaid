@@ -192,10 +192,19 @@
   (s/cat :protection #{':protection}
          :logical-atom ::logical-atom))
 
+(s/def ::forall-expression
+  (s/and
+   (s/cat :forall #{'forall}
+          :variable-symbols (s/and vector?
+                                   (s/coll-of ::variable-symbol))
+          :predicate ::expression
+          :logical-atoms (s/and vector?
+                                (s/coll-of ::logical-atom*)))))
+
 (s/def ::delete-add-element
   (s/or :logical-atom ::logical-atom
         :protection-condition ::protection-condition
-        :universal-quantification ::universal-quantification))
+        :forall-expresssion ::forall-expression))
 
 (s/def ::delete-add-list*
   (s/and vector?
@@ -217,16 +226,7 @@
                            :head (s/or :normal-task ::normal-task-atom)
                            :precondition ::logical-precondition
                            :delete-list ::delete-add-list
-                           :add-list ::delete-add-list))
-   (fn vars-check [op]
-     (let [op (second op)
-           head-vars (find-variables (:head op))
-           precond-vars (find-variables (:precondition op))
-           delete-list-vars (find-variables (:delete-list op))
-           add-list-vars (find-variables (:add-list op))
-           legal-vars (union head-vars precond-vars)
-           check-vars (union delete-list-vars add-list-vars)]
-       (subset? check-vars legal-vars)))))
+                           :add-list ::delete-add-list))))
 
 (s/def ::method
   (s/cat :method #{':method}
@@ -251,7 +251,6 @@
 (s/def ::problem
   (s/&
    (s/cat :defproblem #{'defproblem}
-          :name ::general-symbol
           :initial-state ::state-list
           :task-list ::task-list)
    (comp ground? :initial-state)))
@@ -264,7 +263,7 @@
   (try
     (let [form (if (string? form) (read-string form) form)
           parsed (s/conform spec form)]
-      (if (not (= :cljs.spec.alpha/invalid parsed))
+      (if (not (= :clojure.spec.alpha/invalid parsed))
         parsed
         (do
           (println "Failed to parse input form.")

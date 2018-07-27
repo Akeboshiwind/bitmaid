@@ -1,0 +1,3 @@
+(defproblem problem
+  [(have kiwi)]
+  [(swap banjo kiwi)])

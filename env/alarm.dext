@@ -1,0 +1,11 @@
+[(:operator (!turn-on_alarm ?alarm)
+            (and (alarm ?alarm)
+                 (off ?alarm))
+            [(off ?alarm)]
+            [(on ?alarm)])
+
+ (:operator (!turn-off_alarm ?alarm)
+            (and (alarm ?alarm)
+                 (on ?alarm))
+            [(on ?alarm)]
+            [(off ?alarm)])]

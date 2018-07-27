@@ -1,0 +1,53 @@
+[(:method (rule-1)
+          (and (afternoon)
+               (not
+                (forall [?light]
+                        (light ?light)
+                        (off ?light))))
+          [(turn-off-light ?light) (rule-1)]
+          ()
+          [])
+
+ (:method (rule-2)
+          (and (or (evening)
+                   (morning))
+               (not
+                (forall [?light]
+                        (light ?light)
+                        (on ?light))))
+          [(turn-on-light ?light) (rule-2)]
+          ()
+          [])
+
+ (:method (rule-3)
+          (and (hour ?hour)
+               (call >= ?hour 6)
+               (call < ?hour 7)
+               (door ?door)
+               (locked ?door))
+          [(!unlock_door ?door)]
+          ()
+          [])
+
+ (:method (rule-4)
+          (and (door ?door)
+               (locked ?door)
+               (alarm ?alarm)
+               (off ?alarm)
+               (not (or (morning)
+                        (evening))))
+          [(!turn-on_alarm ?alarm)]
+          (and (door ?door)
+               (unlocked ?door)
+               (alarm ?alarm)
+               (on ?alarm))
+          [(!turn-off_alarm ?alarm)]
+          ()
+          [])
+
+ (:method (automate-house)
+          ()
+          [(rule-1)
+           (rule-2)
+           (rule-3)
+           (rule-4)])]

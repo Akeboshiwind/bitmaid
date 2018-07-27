@@ -1,0 +1,24 @@
+[(:method (rule-1)
+          (and (afternoon)
+               (not
+                (forall [?light]
+                        (light ?light)
+                        (off ?light))))
+          [(!turn-off-all)]
+          ()
+          [])
+
+ (:method (rule-2)
+          (and (or (evening)
+                   (morning))
+               (not
+                (forall [?light]
+                        (light ?light)
+                        (on ?light))))
+          [(!turn-on-all)]
+          ()
+          [])
+
+ (:method (automate-house)
+          ()
+          [(rule-1) (rule-2)])]

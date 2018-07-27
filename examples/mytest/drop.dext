@@ -1,0 +1,1 @@
+[(:operator (!drop ?a) (and (have ?a)) [(have ?a)] [])]

@@ -1,0 +1,16 @@
+(defproblem
+  [(hour 12)
+
+   (light light1) (type light1 light1) (on light1)
+   (light light2) (type light2 light1) (off light2)
+   (light light3) (type light3 light2) (on  light3)
+   (light light4) (type light4 light2) (off light4)
+   (light light5) (type light5 light1) (off light5)
+   (light light6) (type light6 light2) (on  light6)
+   (light light7) (type light7 light2) (off light7)
+   (light light8) (type light8 light1) (off light8)
+   (light light9) (type light9 light1) (on  light9)
+
+   (door front-door) (locked front-door)
+   (alarm house-alarm) (on house-alarm)]
+  [(automate-house)])

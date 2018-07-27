@@ -1,36 +1,29 @@
 # bitmaid
 
-FIXME: description
+The core of a house automation system created for my final year project.
 
-## Installation
+This project has not been tested on any operating system other than `linux` and
+so may not work on other operating systems such as `windows`.
 
-Download from http://example.com/FIXME.
+## Build
+### Leiningen
 
-## Usage
+To build `bitmaid` the build tool `leiningen` is required. To install follow the
+instructions at https://leiningen.org/#install.
 
-FIXME: explanation
+Once leiningen is installed, run `lein uberjar` to create a .jar file in the
+/target/uberjar/ folder. The jar file will be named something along the lines of
+bitmaid-<version-number>-standalone.jar.
 
-    $ java -jar bitmaid-0.1.0-standalone.jar [args]
+## Run
+To run the generated .jar file a folder identical to the resources/ folder in
+the base of this directory must be created in the folder that you wish to run
+project in.
 
-## Options
+An example directory has been created with the correct environment in the folder
+env/. This env/ folder also contains a folder of scripts that can `build`,
+`clean` and `run` the project.
 
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2018 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Domain extension files and a problem file must be placed in the base of the env/
+directory. Examples of these domain extension files and problem files have been
+created in the folder examples/ in the base of the project directory.

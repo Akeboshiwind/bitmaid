@@ -200,6 +200,13 @@
   [protec]
   (map->ProtectionCondition {:atom (compile-logical-atom (:logical-atom protec))}))
 
+(defrecord ForallExpression [variables predicate logical-atoms])
+(defn compile-forall-expression
+  [forall]
+  (map->ForallExpression {:variables (:variable-symbols forall)
+                          :predicate (compile-expression (:predicate forall))
+                          :form (map compile-logical-atom (:logical-atoms forall))}))
+
 (defn compile-delete-add-element
   [element]
   (let [type (first element)
@@ -207,7 +214,7 @@
     (case type
       :logical-atom (compile-logical-atom body)
       :protection-condition (compile-protection-condition body)
-      :universal-quantification (compile-universal-quantification body))))
+      :forall-expresssion (compile-forall-expression body))))
 
 (defn compile-delete-add-list
   [list]
@@ -299,14 +306,12 @@
                         operators
                         (assoc axioms (axiom-name body) (compile-axiom body))))))))
 
-(defrecord Problem [name initial-state task-list])
+(defrecord Problem [initial-state task-list])
 (defn compile-problem
   [problem]
-  (let [name (:name problem)
-        initial-state (map compile-base-logical-atom (:initial-state problem))
+  (let [initial-state (map compile-base-logical-atom (:initial-state problem))
         task-list (compile-task-list (:task-list problem))]
-    (map->Problem {:name name
-                   :initial-state initial-state
+    (map->Problem {:initial-state initial-state
                    :task-list task-list})))
 
 (defn precompile-domain-extension

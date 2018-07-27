@@ -1,0 +1,5 @@
+[(:method (swap ?x ?y)
+  (and (have ?x) (not (have ?y)))
+  [(!drop ?x) (!pickup ?y)]
+  (and (have ?y) (not (have ?x)))
+  [(!drop ?y) (!pickup ?x)])]

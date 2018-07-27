@@ -115,13 +115,11 @@
     (is (not (p/set= [1 2] [3 2 1]))))
   (testing "ground?"
     (is (p/ground? '{:defproblem defproblem,
-                     :name test,
                      :initial-state
                      [{:predicate-symbol hello, :terms [[:number 1]]}
                       {:predicate-symbol hello, :terms [[:number 1]]}],
                      :task-list [:ordered {}]}))
     (is (not (p/ground? '{:defproblem defproblem,
-                          :name test,
                           :initial-state
                           [{:predicate-symbol hello, :terms [[:number 1]]}
                            {:predicate-symbol hello, :terms [[:variable-symbol ?test]]}],
@@ -155,6 +153,7 @@
     (is (s/valid? ::p/conjunction '(and)))
     (is (s/valid? ::p/conjunction '()))
     (is (s/valid? ::p/conjunction '(and (hello) ?test)))
+    (is (s/valid? ::p/conjunction '(and (call + ?hello))))
     (is (not (s/valid? ::p/conjunction '((hello)))))
     (is (not (s/valid? ::p/conjunction '(and hello ?test)))))
   (testing "::disjunction"
@@ -400,6 +399,13 @@
     (is (s/valid? ::p/protection-condition '(:protection (hello (call + 1 2)))))
     (is (s/valid? ::p/protection-condition '(:protection ?hello)))
     (is (not (s/valid? ::p/protection-condition '(:this (at ?truck ?location))))))
+  (testing "::forall-expression"
+    (is (s/valid? ::p/forall-expression '(forall [?package] (blue ?package) [(red ?package)])))
+    (is (not (s/valid? ::p/forall-expression '(forall [?package] (blue ?package) (red ?package)))))
+    (is (not (s/valid? ::p/forall-expression '(forall [?package] (blue ?package)))))
+    (is (not (s/valid? ::p/forall-expression '(forall [?package]))))
+    (is (not (s/valid? ::p/forall-expression '(forall))))
+    (is (not (s/valid? ::p/forall-expression '(test [?package] (blue ?package) [(red ?package)])))))
   (testing "::delete-add-element"
     (is (s/valid? ::p/delete-add-element '(at ?truck ?location)))
     (is (= :logical-atom
@@ -411,9 +417,9 @@
     (is (= :protection-condition
            (first (s/conform ::p/delete-add-element '(:protection (at ?truck ?location))))))
     (is (s/valid? ::p/delete-add-element '(:protection (hello (call + 1 2)))))
-    (is (s/valid? ::p/delete-add-element '(forall [?package] (blue ?package) (not (red ?package)))))
-    (is (= :universal-quantification
-           (first (s/conform ::p/delete-add-element '(forall [?package] (blue ?package) (not (red ?package)))))))
+    (is (s/valid? ::p/delete-add-element '(forall [?package] (blue ?package) [(red ?package)])))
+    (is (= :forall-expresssion
+           (first (s/conform ::p/delete-add-element '(forall [?package] (blue ?package) [(red ?package)])))))
     (is (not (s/valid? ::p/delete-add-element '(:this (at ?truck ?location)))))
     (is (not (s/valid? ::p/delete-add-element '(imply (at ?truck ?location))))))
   (testing "::delete-add-list"
@@ -718,21 +724,21 @@
     (is (s/valid? ::p/state-list '[(hello (call + 1 2))]))
     (is (not (s/valid? ::p/state-list '[(!hello)]))))
   (testing "::problem"
-    (is (s/valid? ::p/problem '(defproblem test
+    (is (s/valid? ::p/problem '(defproblem
                                  [(hello 1)]
                                  [(!test) (eat) (!sleep)])))
-    (is (s/valid? ::p/problem '(defproblem test
+    (is (s/valid? ::p/problem '(defproblem
                                  []
                                  [])))
     (is (not (s/valid? ::p/problem '(defproblem test
+                                      [(hello 1)]
+                                      [(!test) (eat) (!sleep)]))))
+    (is (not (s/valid? ::p/problem '(defproblem
                                       [(hello 1) (hello ?test)]
                                       [(!test) (eat) (!sleep)]))))
     (is (not (s/valid? ::p/problem '(:problem test
                                               [(hello 1)]
                                               [(!test) (eat) (!sleep)]))))
-    (is (not (s/valid? ::p/problem '(defproblem
-                                      [(hello 1)]
-                                      [(!test) (eat) (!sleep)]))))
     (is (not (s/valid? ::p/problem '(defproblem !test
                                       [(hello 1)]
                                       [(!test) (eat) (!sleep)]))))
@@ -741,9 +747,8 @@
                                       [(!test) (eat) (!sleep)]))))
     (is (not (s/valid? ::p/problem '(defproblem test
                                       [(!test) (eat) (!sleep)]))))
-    (is (not (s/valid? ::p/problem '(defproblem test
+    (is (not (s/valid? ::p/problem '(defproblem
                                       [(hello 1)]))))
-    (is (not (s/valid? ::p/problem '(defproblem test))))
     (is (not (s/valid? ::p/problem '(defproblem))))))
 
 (deftest test-parse-domain-extension
@@ -769,9 +774,19 @@
 
 (deftest test-parse-problem
   (testing "parse-problem"
-    (is (not (nil? (p/parse-problem '(defproblem test [(hello 1)] [(!test)])))))
-    (is (not (nil? (p/parse-problem "(defproblem test [(hello 1)] [(!test)])"))))
-    (is (not (nil? (p/parse-problem "(defproblem test ;; This is a test of comments
-                                                 [(hello 1)] [(!test)])"))))
-    (is (nil? (p/parse-problem "(defproblem test [(hello 1] [(!test)])")))
-    (is (nil? (p/parse-problem "(defproblem test [(hello 1)] [(!test))")))))
+    (let [prob (p/parse-problem '(defproblem [(hello 1)] [(!test)]))]
+      (is (not (or (nil? prob)
+                   (= :clojure.spec.alpha/invalid prob)))))
+    (let [prob (p/parse-problem "(defproblem [(hello 1)] [(!test)])")]
+      (is (not (or (nil? prob)
+                   (= :clojure.spec.alpha/invalid prob)))))
+    (let [prob (p/parse-problem "(defproblem ;; This is a test of comments
+                                                 [(hello 1)] [(!test)])")]
+      (is (not (or (nil? prob)
+                   (= :clojure.spec.alpha/invalid prob)))))
+    (let [prob (p/parse-problem "(defproblem [(hello 1] [(!test)])")]
+      (is (or (nil? prob)
+              (= :clojure.spec.alpha/invalid prob))))
+    (let [prob (p/parse-problem "(defproblem [(hello 1)] [(!test))")]
+      (is (or (nil? prob)
+              (= :clojure.spec.alpha/invalid prob))))))

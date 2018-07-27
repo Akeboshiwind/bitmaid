@@ -11,8 +11,8 @@
             Assignment LateBinding LogicalAtom
             FirstSatisfierPrecondition SortedPrecondition
             TaskAtom TaskList MethodOption
-            Method ProtectionCondition Operator
-            AxiomPrecondition Axiom DomainExtension
+            Method ProtectionCondition ForallExpression
+            Operator AxiomPrecondition Axiom DomainExtension
             Problem]))
 
 (deftest test-utils
@@ -242,9 +242,9 @@
     (let [element (s/conform ::p/delete-add-element '(:protection (at ?truck ?old-loc)))
           compiled (c/compile-delete-add-element element)]
       (is (= ProtectionCondition (type compiled))))
-    (let [element (s/conform ::p/delete-add-element '(forall [?p] (package ?p) (in ?p ?t)))
+    (let [element (s/conform ::p/delete-add-element '(forall [?p] (package ?p) [(in ?p ?t)]))
           compiled (c/compile-delete-add-element element)]
-      (is (= UniversalQuantification (type compiled)))))
+      (is (= ForallExpression (type compiled)))))
   (testing "compile-delete-add-list"
     (let [list (s/conform ::p/delete-add-list '[(at ?truck ?old-loc)
                                                 (:protection (at ?truck ?old-loc))])
@@ -386,11 +386,10 @@
 
 (deftest test-problem
   (testing "compile-problem"
-    (let [problem (s/conform ::p/problem '(defproblem test
+    (let [problem (s/conform ::p/problem '(defproblem
                                             [(hello 1)]
                                             [(!test) (eat) (!sleep)]))
           compiled (c/compile-problem problem)]
-      (is (= 'test (:name compiled)))
       (is (= 1 (count (:initial-state compiled))))
       (is (= LogicalAtom (type (first (:initial-state compiled)))))
       (is (= TaskList (type (:task-list compiled))))

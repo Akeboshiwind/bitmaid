@@ -1,0 +1,43 @@
+[(:operator (!turn-on ?light)
+            (and (light ?light)
+                 (off ?light))
+            [(off ?light)]
+            [(on ?light)])
+
+ (:operator (!turn-on-all)
+            ()
+            [(forall [?light]
+                     (and (light ?light)
+                          (off ?light))
+                     [(off ?light)])]
+            [(forall [?light]
+                     (and (light ?light)
+                          (off ?light))
+                     [(on ?light)])])
+
+ (:operator (!turn-off ?light)
+            (and (light ?light)
+                 (on ?light))
+            [(on ?light)]
+            [(off ?light)])
+
+ (:operator (!turn-off-all)
+            ()
+            [(forall [?light]
+                     (and (light ?light)
+                          (on ?light))
+                     [(on ?light)])]
+            [(forall [?light]
+                     (and (light ?light)
+                          (on ?light))
+                     [(off ?light)])])
+
+ (:method (toggle-light-internal ?light)
+          (on ?light)
+          [(!turn-off ?light)]
+          (off ?light)
+          [(!turn-on ?light)])
+
+ (:method (toggle-light ?light)
+          (light ?light)
+          [(toggle-light-internal ?light)])]

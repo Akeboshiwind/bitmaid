@@ -1,0 +1,11 @@
+[(:operator (!lock_door ?door)
+            (and (door ?door)
+                 (unlocked ?door))
+            [(unlocked ?door)]
+            [(locked ?door)])
+
+ (:operator (!unlock_door ?door)
+            (and (door ?door)
+                 (locked ?door))
+            [(locked ?door)]
+            [(unlocked ?door)])]

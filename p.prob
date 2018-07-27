@@ -1,0 +1,5 @@
+(defproblem
+  [(hour 12)
+   (light light1) (on light1)
+   (light light2) (off light2)]
+  [(automate-house)])
